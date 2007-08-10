@@ -1,0 +1,7 @@
+
+
+app/views/users/show.html.erb:
+
+  1) Update forums drop down to show only site forums:
+
+    <%= options_from_collection_for_select(site_forums - @user.forums, "id", "name") %>
