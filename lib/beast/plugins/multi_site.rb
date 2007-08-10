@@ -14,7 +14,20 @@ module Beast
       
       def initialize
         super
+        ApplicationController.class_eval do
+          protected
+            def site_admin?
+              logged_in? && current_user.site_admin?(params[:site_id])
+            end
+            
+            def site
+              @site ||= Site.find(params[:site_id])
+            end
+            helper_method :site_admin?
+        end
         ApplicationController.send :helper, :multi_site
+        
+        User.send :include, UserExtension
         
         ForumsController.class_eval do
           include MultiSiteSupport
@@ -30,6 +43,26 @@ module Beast
         PostsController.class_eval do
           include MultiSiteSupport
           set_scope :post, :index, :search
+        end
+        
+        UsersController.class_eval do
+          protected
+            def admin_with_site_admin
+              params[:user][:admin] = @user.admin? ? '1' : '0' if !current_user.admin?
+              if params[:site_admin] == '1'
+                @user.admining_site << site unless @user.site_admin?(site) 
+              else
+                @user.admining_site.delete(site) if @user.site_admin?(site)
+              end
+              admin_without_site_admin
+            end
+            alias_method_chain :admin, :site_admin
+          
+            def authorized_with_site_admin?
+              return true if authorized_without_site_admin?
+              %w(admin).include?(action_name) && site_admin?
+            end
+            alias_method_chain :authorized?, :site_admin
         end
         
         ActionController::Routing::RouteSet.class_eval do
@@ -71,6 +104,19 @@ module Beast
               @site_ids[key]
             end
         end # RouteSet monkey patch
+      end
+
+      module UserExtension
+        def self.included(target)
+          target.has_and_belongs_to_many :admining_sites, :class_name => 'Site',
+              :join_table => :sites_administrators, :foreign_key => 'user_id',
+              :association_foreign_key => 'site_id'
+        end
+        
+        def site_admin?(site)
+          site = site.id if site.is_a? Site
+          admining_site_ids.include? site
+        end
       end
 
       module MultiSiteSupport

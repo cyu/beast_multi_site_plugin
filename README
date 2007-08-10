@@ -1,7 +1,24 @@
-
-
 app/views/users/show.html.erb:
 
   1) Update forums drop down to show only site forums:
 
+    # around line 27
     <%= options_from_collection_for_select(site_forums - @user.forums, "id", "name") %>
+    
+  2) Update user's right side bar to allow site administrators to configure
+     moderators or site administrators for their site:
+   
+   # around line 4
+   <% if admin? || site_admin? %>
+   
+   # only allow administrators to set others as administrators
+   # around line 30 & 32
+   <% if admin? -%>
+   ...
+   <% end -%>
+   
+   # add check box for configuring site administration privileges
+   # around line 24 (after administrator check box)
+   <% unless admin? -%>
+   <p><label><%= check_box_tag 'site_admin', '1', @user.site_admin?(params[:site_id]) %> <%= 'User is an <b>site</b> administrator'[] %></label></p>
+   <% end -%>
