@@ -14,58 +14,22 @@ module Beast
       
       def initialize
         super
-        
-        ApplicationController.class_eval do
-          protected
-            def current_user=(value)
-              if @current_user = value
-                site_session[:user_id] = @current_user.id 
-                # this is used while we're logged in to know which threads are new, etc
-                site_session[:last_active] = @current_user.last_seen_at
-                site_session[:topics] = site_session[:forums] = {}
-                update_last_seen_at
-              end
-            end
-            
-            def current_user
-              @current_user ||= ((current_user_id && User.find_by_id(current_user_id)) || 0)
-            end
-            
-            def current_user_id
-              site_session[:user_id]
-            end
-            
-            def site_session
-              session[:sites] ||= {}
-              session[:sites][params[:site_key]] ||= {}
-            end
-        end
+        ApplicationController.send :helper, :multi_site
         
         ForumsController.class_eval do
           include MultiSiteSupport
           set_scope :forum, :index
+
+          def create_with_site_id
+            params[:forum][:site_id] = params[:site_id]
+            create_without_site_id
+          end
+          alias_method_chain :create, :site_id
         end
         
         PostsController.class_eval do
           include MultiSiteSupport
-          set_scope :post, :index
-        end
-        
-        UsersController.class_eval do
-          include MultiSiteSupport
-          set_scope :user, :index
-        end
-        
-        # limit uniqueness validations for a user to a site.
-        ActiveRecord::Validations::ClassMethods.module_eval do
-          unless method_defined? :validates_uniqueness_of_with_site_scoped
-            def validates_uniqueness_of_with_site_scoped(*attr_names)
-              p attr_names
-              #attr_names << {:scope => :site_id} if [ :display_name ].find { |v| attr_names.include? v }
-              validates_uniqueness_of_without_site_scoped(*attr_names)
-            end
-            alias_method_chain :validates_uniqueness_of, :site_scoped
-          end
+          set_scope :post, :index, :search
         end
         
         ActionController::Routing::RouteSet.class_eval do
@@ -115,32 +79,19 @@ module Beast
         end
         
         module ClassMethods
-          def set_scope(klazz, action)
-            define_method "#{action}_with_site_id".to_sym do
-              klazz.to_s.classify.constantize.send :with_scope,
-                  :find => { :conditions => ["site_id = ?", params[:site_id]] } do
-                send "#{action}_without_site_id"
+          def set_scope(klazz, *actions)
+            actions.each do |action|
+              define_method "#{action}_with_site_id".to_sym do
+                klazz.to_s.classify.constantize.send :with_scope,
+                    :find => { :conditions => ["site_id = ?", params[:site_id]] } do
+                  send "#{action}_without_site_id"
+                end
               end
+              alias_method_chain action, :site_id
             end
-            alias_method_chain action, :site_id
           end
         end # ClassMethods module
-      end # SiteScopeLock module       
-      
-      module UserExtension
-        def self.included(target)
-          #target.extend(ClassMethods)
-          target.alias_method_chain :validates_uniqueness_of, :site_scoped
-        end
-
-        #module ClassMethods
-          def validates_uniqueness_of_with_site_scoped(*attr_names)
-            p attr_names
-            #attr_names << {:scope => :site_id} if [ :display_name ].find { |v| attr_names.include? v }
-            validates_uniqueness_of_without_site_scoped(*attr_names)
-          end
-        #end
-      end # UserExtension module
+      end # MultiSiteSupport module
 
       class Schema < ActiveRecord::Migration
     
@@ -149,20 +100,21 @@ module Beast
             t.column :key, :string
             t.column :name, :string
           end
-
+          add_index :sites, :key, :unique => true
+          create_table :sites_administrators do |t|
+            t.column :user_id, :integer
+            t.column :site_id, :integer
+          end
+          add_index :sites_administrators, :user_id
           add_column :forums, :site_id, :string
-          add_column :users, :site_id, :string
           
           Site.create :key => 'default', :name => 'Default Site'
           Forum.update_all "site_id = 1"
-          User.update_all "site_id = 1"
         end
       
         def self.uninstall
           drop_table :sites
-
           remove_column :forums, :site_id
-          remove_column :users, :site_id
         end
       end # end Schema class
 
