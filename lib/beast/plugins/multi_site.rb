@@ -16,8 +16,9 @@ module Beast
         super
         ApplicationController.class_eval do
           protected
-            def site_admin?
-              logged_in? && current_user.site_admin?(params[:site_id])
+            def site_admin?(user=nil)
+              return false if user.nil? && !logged_in?
+              (user || current_user).site_admin?(params[:site_id])
             end
             
             def site
@@ -48,11 +49,14 @@ module Beast
         UsersController.class_eval do
           protected
             def admin_with_site_admin
-              params[:user][:admin] = @user.admin? ? '1' : '0' if !current_user.admin?
+              if params[:user] && params[:user][:admin] && !current_user.admin?
+                params[:user][:admin] = @user.admin? ? '1' : '0'
+              end
+
               if params[:site_admin] == '1'
-                @user.admining_site << site unless @user.site_admin?(site) 
+                @user.admining_sites << site unless @user.site_admin?(site) 
               else
-                @user.admining_site.delete(site) if @user.site_admin?(site)
+                @user.admining_sites.delete(site) if @user.site_admin?(site)
               end
               admin_without_site_admin
             end
@@ -147,11 +151,13 @@ module Beast
             t.column :name, :string
           end
           add_index :sites, :key, :unique => true
-          create_table :sites_administrators do |t|
+          
+          create_table :sites_administrators, :id => false do |t|
             t.column :user_id, :integer
             t.column :site_id, :integer
           end
           add_index :sites_administrators, :user_id
+          
           add_column :forums, :site_id, :string
           
           Site.create :key => 'default', :name => 'Default Site'
@@ -160,6 +166,11 @@ module Beast
       
         def self.uninstall
           drop_table :sites
+          remove_index :sites, :key
+
+          drop_table :sites_administrators
+          remove_index :sites_administrators, :user_id
+
           remove_column :forums, :site_id
         end
       end # end Schema class
