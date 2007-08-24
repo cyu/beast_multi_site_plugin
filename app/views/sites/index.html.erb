@@ -1,0 +1,36 @@
+<% content_for :right do %>
+<h5><%= 'Find a Site'[] %></h5>
+
+<% form_tag sites_path, :method => 'get' do -%>
+<p>
+<label><%= 'Site name'[] %></label>
+<%= text_field_tag :q, params[:q] %> 
+<%= submit_tag "Search"[:search_title] %></p>
+<% end -%>
+
+<% end -%>
+
+<h1 style="margin-top:0;"><%= 'Sites'[:sites_title] %></h1>
+<p class="subtitle">
+<%= number_with_delimiter(@sites.length) %> sites
+</p>
+
+<%= pagination @sites %>
+
+<table border="0" cellspacing="0" cellpadding="0" class="wide forums">
+  <tr>
+    <th class="la" width="88%"><%= 'Name'[] %></th>
+    <th><%= 'Key'[] %></th>
+    <th width="1%"><%= 'Forums'[] %></th>
+  </tr>
+<% @sites.each do |site|-%>  
+  <tr>
+    <td><%= link_to h(site.name), forums_path(:site_key => site.key) %></td>
+    <td class="la"><%= site.key %></td>
+    <td class="ca inv"><%= site.forums.size %></td>
+  </tr>
+<% end %>
+</table>
+
+<%= next_page @sites %>
+<%= pagination @sites %>

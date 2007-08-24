@@ -7,6 +7,8 @@ module Beast
       homepage 'http://blog.codeeg.com'
       notes 'MultiSite support for Beast'
 
+      route :resources, 'sites'
+
       [ 'controllers', 'helpers', 'models' ].each do |dir|
         path = File.join(plugin_path, 'app', dir)
         Dependencies.load_paths << File.expand_path(path) if File.exist?(path)
@@ -15,6 +17,7 @@ module Beast
       def initialize
         super
         ApplicationController.class_eval do
+          prepend_view_path File.join(MultiSite::plugin_path, 'app', 'views')
           protected
             def site_admin?(user=nil)
               return false if user.nil? && !logged_in?
@@ -84,7 +87,7 @@ module Beast
           protected
             unless method_defined? :generate_with_site_key
               def generate_with_site_key(options, recall = {}, method=:generate)
-                site_key = recall[:site_key]
+                site_key = options[:site_key] ? options.delete(:site_key) : recall[:site_key]
                 path = generate_without_site_key(options, recall, method)
                 site_key == 'default' ? path : "/#{site_key}#{path}"
               end
