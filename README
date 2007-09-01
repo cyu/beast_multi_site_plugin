@@ -1,44 +1,61 @@
 MULTI-SITE PLUGIN
 ==============================
 
-Run separate 'Sites' under the same rails instance, so that you can a different set of forums per site.
+Run separate 'Sites' under the same rails instance, so that you can have a different set of forums per site.
 
 
 INSTALLATION
 ==============================
 
-/views/users/show.html.erb:
+1) Install this plugin:
 
-  1) Update forums drop down to show only site forums:
+     cd vendor/beast
+     svn export http://svn.codeeg.com/beast/multi_site
 
-    # around line 27
-    <%= options_from_collection_for_select(site_forums - @user.forums, "id", "name") %>
+2) Run the following command:
+
+     script/runner 'Beast::Plugins::MultiSite.install'
+
+3) Add the plugin to the list of Beast plugins to be initialized.  If you this is
+   the first Beast plugin you can initialize plugins by creating a plugins.rb file
+   in config/initializers and add the following line(s):
+   
+     Beast::Plugin.initialize_plugins 'Beast::Plugins::MultiSite'
+
+4) Update some of the beast views to include multi-site functionality:
+
+   /views/users/show.html.erb:
+
+     1) Update forums drop down to show only site forums:
+
+         # around line 27
+         <%= options_from_collection_for_select(site_forums - @user.forums, "id", "name") %>
     
-  2) Update user's right side bar to allow site administrators to configure
-     moderators or site administrators for their site:
+     2) Update user's right side bar to allow site administrators to configure
+        moderators or site administrators for their site:
    
-   # around line 4
-   <% if admin? || site_admin? %>
+         # around line 4
+         <% if admin? || site_admin? %>
    
-   # only allow administrators to set others as administrators
-   # around line 30 & 32
-   <% if admin? -%>
-   ...
-   <% end -%>
+         # only allow administrators to set others as administrators
+         # around line 30 & 32
+         <% if admin? -%>
+         ...
+         <% end -%>
    
-   # add check box for configuring site administration privileges
-   # around line 24 (after administrator check box)
-   <% unless @user.admin? -%>
-   <p><label><%= check_box_tag 'site_admin', '1', @user.site_admin?(params[:site_id]) %> <%= 'User is an <b>site</b> administrator'[] %></label></p>
-   <% end -%>
+         # add check box for configuring site administration privileges
+         # around line 24 (after administrator check box)
+         <% unless @user.admin? -%>
+         <p><label><%= check_box_tag 'site_admin', '1', @user.site_admin?(params[:site_id]) %> <%= 'User is an <b>site</b> administrator'[] %></label></p>
+         <% end -%>
    
-/views/users/show.html.erb:
+   /views/users/show.html.erb:
 
-  1) Update user list page to highlight site administrators:
+     1) Update user list page to highlight site administrators:
   
-   # around line 28
-   <td><%= link_to h(user.display_name), user_path(user), :class => ((user.admin? || site_admin?(user)) ? "admin" : nil) %>
+         # around line 28
+         <td><%= link_to h(user.display_name), user_path(user), :class => ((user.admin? || site_admin?(user)) ? "admin" : nil) %>
    
-   # around line 30
-   <%= "(site admin)"[:site_admin_in_parens] if site_admin?(user) %>
+         # around line 30
+         <%= "(site admin)"[:site_admin_in_parens] if site_admin?(user) %>
 
