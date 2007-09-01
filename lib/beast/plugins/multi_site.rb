@@ -16,6 +16,7 @@ module Beast
       
       def initialize
         super
+        ActiveRecord::Base.observers = :site_observer
         ApplicationController.class_eval do
           prepend_view_path File.join(MultiSite::plugin_path, 'app', 'views')
           protected
@@ -25,7 +26,7 @@ module Beast
             end
             
             def site
-              @site ||= Site.find(params[:site_id])
+              @current_site ||= Site.find(params[:site_id])
             end
             helper_method :site_admin?, :site
         end
@@ -84,6 +85,10 @@ module Beast
             "#{params[:controller].camelize}Controller".constantize
           end
           
+          def self.clear_site_ids
+            @@site_ids = nil
+          end
+          
           protected
             unless method_defined? :generate_with_site_key
               def generate_with_site_key(options, recall = {}, method=:generate)
@@ -107,8 +112,8 @@ module Beast
             end
             
             def site_id_for(key)
-              @site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
-              @site_ids[key]
+              @@site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
+              @@site_ids[key]
             end
         end # RouteSet monkey patch
       end

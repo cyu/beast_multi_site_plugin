@@ -3,6 +3,7 @@ class SitesController < ApplicationController
   alias :authorized? :admin?
 
   before_filter :login_required
+  before_filter :find_or_initialize_site, :except => :index
 
   def index
     respond_to do |format|
@@ -20,11 +21,26 @@ class SitesController < ApplicationController
   def create
     respond_to do |format|
       format.html do
-        @site = Site.create!(params[:site])
+        @site.attributes = params[:site]
+        @site.save!
         flash[:notice] = "Site created"[]
         redirect_to :action => 'index'
       end
     end
   end
 
+  def update
+    @site.update_attributes!(params[:site])
+    respond_to do |format|
+      format.html { redirect_to sites_path }
+      format.xml  { head 200 }
+    end
+  end
+  
+  protected
+  
+    def find_or_initialize_site
+      @site = params[:id] ? Site.find(params[:id]) : Site.new
+    end
+    
 end

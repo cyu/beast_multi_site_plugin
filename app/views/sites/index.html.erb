@@ -8,6 +8,12 @@
 <%= submit_tag "Search"[:search_title] %></p>
 <% end -%>
 
+<% if admin? %>
+<h6><%= 'Admin'[:admin_title] %></h6>
+<p><%= link_to('Create New Site', new_site_path, :class => "utility") %></p>
+<% end %>
+
+
 <% end -%>
 
 <h1 style="margin-top:0;"><%= 'Sites'[:sites_title] %></h1>
@@ -25,7 +31,7 @@
   </tr>
 <% @sites.each do |site|-%>  
   <tr>
-    <td><%= link_to h(site.name), forums_path(:site_key => site.key) %></td>
+    <td><%= link_to h(site.name), forums_path(:site_key => site.key) %> [<%= link_to('edit', edit_site_path(site)) %>]</td>
     <td class="la"><%= site.key %></td>
     <td class="ca inv"><%= site.forums.size %></td>
   </tr>
