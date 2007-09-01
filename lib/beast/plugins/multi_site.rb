@@ -16,7 +16,7 @@ module Beast
       
       def initialize
         super
-        ActiveRecord::Base.observers = :site_observer
+        SiteObserver.instance
         ApplicationController.class_eval do
           prepend_view_path File.join(MultiSite::plugin_path, 'app', 'views')
           protected

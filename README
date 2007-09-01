@@ -1,3 +1,12 @@
+MULTI-SITE PLUGIN
+==============================
+
+Run separate 'Sites' under the same rails instance, so that you can a different set of forums per site.
+
+
+INSTALLATION
+==============================
+
 /views/users/show.html.erb:
 
   1) Update forums drop down to show only site forums:
@@ -32,3 +41,4 @@
    
    # around line 30
    <%= "(site admin)"[:site_admin_in_parens] if site_admin?(user) %>
+
