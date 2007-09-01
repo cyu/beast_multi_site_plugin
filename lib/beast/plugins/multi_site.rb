@@ -27,7 +27,7 @@ module Beast
             def site
               @site ||= Site.find(params[:site_id])
             end
-            helper_method :site_admin?
+            helper_method :site_admin?, :site
         end
         ApplicationController.send :helper, :multi_site
         
