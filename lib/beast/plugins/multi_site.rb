@@ -9,7 +9,7 @@ module Beast
 
       route :resources, 'sites'
 
-      [ 'controllers', 'helpers', 'models' ].each do |dir|
+      %w( controllers helpers models ).each do |dir|
         path = File.join(plugin_path, 'app', dir)
         Dependencies.load_paths << File.expand_path(path) if File.exist?(path)
       end
