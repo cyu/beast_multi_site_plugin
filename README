@@ -7,22 +7,26 @@ Run separate 'Sites' under the same rails instance, so that you can have a diffe
 INSTALLATION
 ==============================
 
-1) Install this plugin:
+1) First, install the beast_plugins plugin if you haven't already:
+
+     script/plugin install http://svn.techno-weenie.net/projects/beast/plugins/beast_plugins
+
+2) Install this plugin:
 
      cd vendor/beast
      svn export http://svn.codeeg.com/beast/multi_site
 
-2) Run the following command:
+3) Run the following command:
 
      script/runner 'Beast::Plugins::MultiSite.install'
 
-3) Add the plugin to the list of Beast plugins to be initialized.  If you this is
+4) Add the plugin to the list of Beast plugins to be initialized.  If you this is
    the first Beast plugin you can initialize plugins by creating a plugins.rb file
    in config/initializers and add the following line(s):
    
      Beast::Plugin.initialize_plugins 'Beast::Plugins::MultiSite'
 
-4) Update some of the beast views to include multi-site functionality:
+5) Update some of the beast views to include multi-site functionality:
 
    /views/users/show.html.erb:
 
