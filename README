@@ -25,6 +25,11 @@ INSTALLATION
    in config/initializers and add the following line(s):
    
      Beast::Plugin.initialize_plugins 'Beast::Plugins::MultiSite'
+   
+   In addition, this plugin requires additional initialization.  Add the following
+   snippet to the end of plugins.rb:
+   
+     MultiSite::Initializer.run  
 
 5) Update some of the beast views to include multi-site functionality:
 
@@ -63,3 +68,12 @@ INSTALLATION
          # around line 30
          <%= "(site admin)"[:site_admin_in_parens] if site_admin?(user) %>
 
+   /views/forums/index.html.rb:
+   
+     1) Update forums list page to allow site administrators to create new forums:
+     
+         # around line 9
+         <% if admin? || site_admin? %>
+         
+         # around line 53
+         <%= link_to 'Edit'[:edit_title], edit_forum_path(forum), :class => "tiny", :rel => "directory", :style => "float:right" if admin? || site_admin? %>
