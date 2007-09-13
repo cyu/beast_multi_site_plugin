@@ -40,10 +40,21 @@ module Beast
         ForumsController.class_eval do
           around_filter ::MultiSite::SiteFilter.new(:forum), :only => :index
           around_filter ::MultiSite::SetSiteFilter.new(:forum), :only => :create
+          around_filter :set_topic_and_forum_filter, :only => :index
 
           protected
             def authorized?
               admin? || (site_admin? && !%w(destroy).include?(action_name))
+            end
+            
+            def set_topic_and_forum_filter
+              find_options = {
+                  :conditions => ["forums.site_id = ?", params[:site_id]],
+                  :include => :forum }
+
+              Topic.send(:with_scope, :find => find_options) do
+                Post.send(:with_scope, :find => find_options) { yield }
+              end
             end
         end
         
