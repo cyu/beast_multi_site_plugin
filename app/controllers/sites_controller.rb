@@ -37,6 +37,14 @@ class SitesController < ApplicationController
     end
   end
   
+  def destroy
+    @site.destroy
+    respond_to do |format|
+      format.html { redirect_to sites_path }
+      format.xml  { head 200 }
+    end
+  end
+  
   protected
   
     def find_or_initialize_site

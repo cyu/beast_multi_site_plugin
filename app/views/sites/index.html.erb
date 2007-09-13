@@ -31,7 +31,9 @@
   </tr>
 <% @sites.each do |site|-%>  
   <tr>
-    <td><%= link_to h(site.name), forums_path(:site_key => site.key) %> [<%= link_to('edit', edit_site_path(site)) %>]</td>
+    <td><%= link_to h(site.name), forums_path(:site_key => site.key) %>
+      [ <%= link_to('edit', edit_site_path(site)) %> |
+      <%= link_to('del', site_path(site), :method => :delete, :confirm => 'Are you sure you want to delete this site?') %> ]</td>
     <td class="la"><%= site.key %></td>
     <td class="ca inv"><%= site.forums.size %></td>
   </tr>
