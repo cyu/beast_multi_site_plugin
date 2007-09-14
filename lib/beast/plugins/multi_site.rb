@@ -36,11 +36,14 @@ module Beast
         end
         
         User.send :include, UserExtension
+        Forum.belongs_to :site
         
         ForumsController.class_eval do
           around_filter ::MultiSite::SiteFilter.new(:forum), :only => :index
           around_filter ::MultiSite::SetSiteFilter.new(:forum), :only => :create
           around_filter :set_topic_and_forum_filter, :only => :index
+          
+          cache_sweeper :site_posts_sweeper, :only => [:create, :update, :destroy]
 
           protected
             def authorized?
@@ -59,6 +62,9 @@ module Beast
         end
         
         PostsController.around_filter ::MultiSite::SiteFilter.new(:post), :only => [:index, :search]
+        PostsController.cache_sweeper :site_posts_sweeper, :only => [:create, :update, :destroy]
+        
+        TopicsController.cache_sweeper :site_posts_sweeper, :only => [:create, :update, :destroy]
         
         UsersController.class_eval do
           before_filter :update_site_admin, :only => :admin
