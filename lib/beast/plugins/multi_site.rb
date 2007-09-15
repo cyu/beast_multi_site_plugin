@@ -27,11 +27,15 @@ module Beast
               return false if user.nil? && !logged_in?
               (user || current_user).site_admin?(params[:site_id])
             end
+
+            def administrable?
+              admin? || site_admin?
+            end
             
             def site
               @current_site ||= Site.find(params[:site_id])
             end
-            helper_method :site_admin?, :site
+            helper_method :site_admin?, :site, :administrable?
             helper :multi_site
         end
         
