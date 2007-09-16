@@ -94,7 +94,7 @@ module Beast
             alias_method_chain :authorized?, :site_admin
         end
         
-        ::MultiSite::Routing.initialize
+        ActionController::Routing::RouteSet.send :include, ::MultiSite::Routing::RouteSetExtensions
       end # end initialize method
       
       module UserExtension

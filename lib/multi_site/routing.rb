@@ -1,51 +1,77 @@
 module MultiSite
   module Routing
-    def self.initialize
-     
-      ActionController::Routing::RouteSet.class_eval do
-        def recognize(request)
-          site, path = extract_site_data(request.path)
+    
+    mattr_accessor :use_domain
+    @@use_subdomain = false
+    
+    def self.use_subdomain?
+      @@use_subdomain
+    end
+    
+    module RouteSetExtensions
+      
+      def self.clear_site_ids
+        @@site_ids = nil
+      end
+      
+      def self.included(base)
+        # need this block to work around class reloading
+        unless base.method_defined?(:recognize_path_without_site_values)
+          base.alias_method_chain :recognize_path, :site_values
+          base.alias_method_chain :extract_request_environment, :site_values
+          base.alias_method_chain :generate, :site_key
+        end
+      end
+
+      protected
+
+        def recognize_path_with_site_values(path, environment = {})
+          params = if MultiSite::Routing.use_subdomain? || environment[:site_key] == 'default'
+            recognize_path_without_site_values(path, environment)
+          else
+            recognize_path_without_site_values(path[path.index('/',1)..-1], environment)
+          end
           
-          params = recognize_path(path, extract_request_environment(request))
-          params[:site_key] = site[:key]
-          params[:site_id] = site[:id]
+          params[:site_key] = environment[:site_key]
+          params[:site_id] = environment[:site_id]
+          params
+        end
+
+        def extract_request_environment_with_site_values(request)
+          env = extract_request_environment_without_site_values(request)
           
-          request.path_parameters = params.with_indifferent_access
-          "#{params[:controller].camelize}Controller".constantize
+          if MultiSite::Routing.use_subdomain?
+            env.merge(extract_site_values_from_subdomain(request.subdomains.first))
+          else
+            env.merge(extract_site_values_from_path(request.path))
+          end
         end
         
-        def self.clear_site_ids
-          @@site_ids = nil
+        def extract_site_values_from_path(path)
+          translated_path = path[1..-1] # strip leading '/'
+          site_key = translated_path.split('/', 2)[0]
+          site_id = site_id_for(site_key)
+          
+          site_id ? {:site_key => site_key, :site_id => site_id} : {:site_key => 'default', :site_id => 1} 
         end
         
-        protected
-          unless method_defined? :generate_with_site_key
-            def generate_with_site_key(options, recall = {}, method=:generate)
-              site_key = options[:site_key] ? options.delete(:site_key) : recall[:site_key]
-              path = generate_without_site_key(options, recall, method)
-              site_key == 'default' ? path : "/#{site_key}#{path}"
-            end
-            alias_method_chain :generate, :site_key
-          end
-      
-          def extract_site_data(path)
-            translated_path = path[1..-1] # strip leading '/'
-            site_key, translated_path = translated_path.split('/', 2)
-            site_id = site_id_for site_key
-            
-            if site_id
-              [{:key => site_key, :id => site_id}, "/#{translated_path}"]
-            else
-              [{:key => 'default', :id => 1}, path]
-            end
-          end
+        def extract_site_values_from_subdomain(subdomain)
+          site_key = (subdomain.blank? || subdomain == 'www') ? 'default' : subdomain
+          site_id = site_id_for(site_key)
           
-          def site_id_for(key)
-            @@site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
-            @@site_ids[key]
-          end
-      end # end RouteSet monkey patch
+          site_id ? {:site_key => site_key, :site_id => site_id} : {:site_key => 'default', :site_id => 1}
+        end
       
-    end # end initialize method
+        def generate_with_site_key(options, recall = {}, method=:generate)
+          site_key = options[:site_key] ? options.delete(:site_key) : recall[:site_key]
+          path = generate_without_site_key(options, recall, method)
+          (MultiSite::Routing.use_subdomain? || site_key == 'default') ? path : "/#{site_key}#{path}"
+        end
+      
+        def site_id_for(key)
+          @@site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
+          @@site_ids[key]
+        end
+    end # end RouteSetExtensions module
   end
 end
