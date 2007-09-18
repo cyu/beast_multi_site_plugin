@@ -3,7 +3,7 @@ module Beast
 
     class MultiSite < Beast::Plugin
       author 'Calvin Yu - codeeg.com'
-      version '0002'
+      version '0003'
       homepage 'http://boardista.com'
       notes 'MultiSite support for Beast'
 

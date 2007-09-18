@@ -1,18 +1,22 @@
 module MultiSite
   module Routing
     
-    mattr_accessor :use_domain
+    mattr_accessor :use_subdomain
     @@use_subdomain = false
-    
     def self.use_subdomain?
       @@use_subdomain
     end
+
+    def self.clear_site_ids
+      @@site_ids = nil
+    end
+    
+    def self.site_id_for(key)
+      @@site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
+      @@site_ids[key]
+    end
     
     module RouteSetExtensions
-      
-      def self.clear_site_ids
-        @@site_ids = nil
-      end
       
       def self.included(base)
         # need this block to work around class reloading
@@ -69,8 +73,7 @@ module MultiSite
         end
       
         def site_id_for(key)
-          @@site_ids ||= Site.find(:all).inject({}) {|h, site| h[site.key] = site.id; h}
-          @@site_ids[key]
+          MultiSite::Routing.site_id_for(key)
         end
     end # end RouteSetExtensions module
   end

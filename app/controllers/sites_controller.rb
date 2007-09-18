@@ -8,11 +8,11 @@ class SitesController < ApplicationController
   def index
     respond_to do |format|
       format.html do
-        @sites = Site.paginate :page => params[:page], :per_page => 50, :order => "name", :conditions => Site.build_search_conditions(params[:q])
-        @site_count = Site.count
+        @sites = Site.paginate :page => params[:page], :per_page => 50, :order => "name",
+            :conditions => build_site_search_conditions
       end
       format.xml do
-        @sites = Site.search(params[:q], :limit => 25)
+        @sites = site_search
         render :xml => @sites.to_xml
       end
     end
@@ -51,4 +51,11 @@ class SitesController < ApplicationController
       @site = params[:id] ? Site.find(params[:id]) : Site.new
     end
     
+    def build_site_search_conditions
+      Site.build_search_conditions(params[:q])
+    end
+    
+    def site_search
+      Site.search(params[:q], :limit => 25)
+    end
 end
