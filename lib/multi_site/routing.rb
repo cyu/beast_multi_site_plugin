@@ -33,7 +33,9 @@ module MultiSite
           params = if MultiSite::Routing.use_subdomain? || environment[:site_key] == 'default'
             recognize_path_without_site_values(path, environment)
           else
-            recognize_path_without_site_values(path[path.index('/',1)..-1], environment)
+            pos = path.index('/',1)
+            translated_path = pos ? path[pos..-1] : '/'
+            recognize_path_without_site_values(translated_path, environment)
           end
           
           params[:site_key] = environment[:site_key]
