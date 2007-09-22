@@ -4,8 +4,9 @@ class Site < ActiveRecord::Base
   has_many :forums
   
   validates_presence_of :key, :name
+  validates_exclusion_of(:key, :message => "Invalid site key", :in => ['default'], :if => Proc.new { |site| site.id != 1 })
   validates_exclusion_of :key, :message => "Invalid site key", :in => (%w(
-      activate default forums logged_exceptions login logout posts session settings signup sites users
+      activate forums logged_exceptions login logout posts session settings signup sites users
       images javascripts stylesheets system ) +
       (const_defined?(:MULTI_SITE_EXCLUDED_KEYS) ? MULTI_SITE_EXCLUDED_KEYS : []))
   validates_format_of :key, :with => /\A[a-z0-9_-]+\Z/i
