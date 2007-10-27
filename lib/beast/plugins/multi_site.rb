@@ -3,7 +3,7 @@ module Beast
 
     class MultiSite < Beast::Plugin
       author 'Calvin Yu - codeeg.com'
-      version '0004'
+      version '0005'
       homepage 'http://boardista.com'
       notes 'MultiSite support for Beast'
 
@@ -93,8 +93,9 @@ module Beast
             end
             alias_method_chain :authorized?, :site_admin
         end
-        
-        ActionController::Routing::RouteSet.send :include, ::MultiSite::Routing::RouteSetExtensions
+
+        ActionController::Routing::RouteSet.send :include, ::MultiSite::RouteSetExt
+        ActionController::Base.send :include, ::MultiSite::ActionControllerBaseExt
       end # end initialize method
       
       module UserExtension
